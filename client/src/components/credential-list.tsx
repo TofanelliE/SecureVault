@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
 import { type Credential } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Edit2, ExternalLink, Trash2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { deleteCredential, getCredentials } from "@/lib/storage";
+import { deleteCredential } from "@/lib/storage";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface CredentialListProps {
   search: string;
@@ -13,28 +13,13 @@ interface CredentialListProps {
 }
 
 export default function CredentialList({ search, onEdit }: CredentialListProps) {
-  const [credentials, setCredentials] = useState<Credential[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    async function loadCredentials() {
-      try {
-        const data = await getCredentials();
-        setCredentials(data);
-      } catch (error) {
-        toast({
-          title: "Error loading credentials",
-          description: error instanceof Error ? error.message : "Please try again",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadCredentials();
-  }, [toast]);
+  const { data: credentials = [], isLoading } = useQuery({
+    queryKey: ['/api/credentials'],
+    retry: false
+  });
 
   const filteredCredentials = credentials.filter(
     (cred) =>
@@ -45,7 +30,7 @@ export default function CredentialList({ search, onEdit }: CredentialListProps) 
   async function handleDelete(id: string) {
     try {
       await deleteCredential(id);
-      setCredentials(await getCredentials());
+      queryClient.invalidateQueries({ queryKey: ['/api/credentials'] });
       toast({ title: "Credential deleted successfully" });
     } catch (error) {
       toast({

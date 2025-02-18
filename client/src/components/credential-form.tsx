@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Save } from "lucide-react";
 import { useState } from "react";
 import { saveCredential, updateCredential } from "@/lib/storage";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface CredentialFormProps {
   editCredential: Credential | null;
@@ -17,6 +18,7 @@ interface CredentialFormProps {
 export default function CredentialForm({ editCredential, onSave }: CredentialFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const form = useForm<InsertCredential>({
     resolver: zodResolver(insertCredentialSchema),
@@ -36,6 +38,7 @@ export default function CredentialForm({ editCredential, onSave }: CredentialFor
         await saveCredential(data);
         toast({ title: "Credential saved successfully" });
       }
+      queryClient.invalidateQueries({ queryKey: ['/api/credentials'] });
       form.reset({ url: "", username: "", password: "" });
       onSave();
     } catch (error) {
