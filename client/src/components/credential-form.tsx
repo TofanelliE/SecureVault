@@ -9,6 +9,7 @@ import { Eye, EyeOff, Save } from "lucide-react";
 import { useState } from "react";
 import { saveCredential, updateCredential } from "@/lib/storage";
 import { useQueryClient } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface CredentialFormProps {
   editCredential: Credential | null;
@@ -26,6 +27,7 @@ export default function CredentialForm({ editCredential, onSave }: CredentialFor
       url: "",
       username: "",
       password: "",
+      category: "Uncategorized"
     },
   });
 
@@ -39,7 +41,7 @@ export default function CredentialForm({ editCredential, onSave }: CredentialFor
         toast({ title: "Credential saved successfully" });
       }
       queryClient.invalidateQueries({ queryKey: ['/api/credentials'] });
-      form.reset({ url: "", username: "", password: "" });
+      form.reset({ url: "", username: "", password: "", category: "Uncategorized" });
       onSave();
     } catch (error) {
       toast({
@@ -53,6 +55,31 @@ export default function CredentialForm({ editCredential, onSave }: CredentialFor
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a category" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="Uncategorized">Uncategorized</SelectItem>
+                  <SelectItem value="Work">Work</SelectItem>
+                  <SelectItem value="Personal">Personal</SelectItem>
+                  <SelectItem value="Social">Social</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="url"

@@ -7,6 +7,7 @@ export const credentials = pgTable("credentials", {
   url: text("url").notNull(),
   username: text("username").notNull(),
   password: text("password").notNull(),
+  category: text("category").default("Uncategorized").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
@@ -14,7 +15,8 @@ export type Credential = typeof credentials.$inferSelect;
 export const insertCredentialSchema = createInsertSchema(credentials, {
   url: z.string().url("Please enter a valid URL"),
   username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required")
+  password: z.string().min(1, "Password is required"),
+  category: z.string().default("Uncategorized")
 }).omit({ id: true, createdAt: true });
 
 export type InsertCredential = z.infer<typeof insertCredentialSchema>;
