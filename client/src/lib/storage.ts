@@ -1,43 +1,22 @@
 import { type Credential, type InsertCredential } from "@shared/schema";
+import { apiRequest } from "./queryClient";
 
-const STORAGE_KEY = "credentials";
-
-export function getCredentials(): Credential[] {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) return [];
-  return JSON.parse(stored);
+export async function getCredentials(): Promise<Credential[]> {
+  const res = await fetch("/api/credentials", {
+    credentials: "include"
+  });
+  if (!res.ok) throw new Error("Failed to fetch credentials");
+  return res.json();
 }
 
 export async function saveCredential(credential: InsertCredential): Promise<void> {
-  const credentials = getCredentials();
-  const newCredential: Credential = {
-    ...credential,
-    id: crypto.randomUUID(),
-    createdAt: Date.now(),
-  };
-  
-  credentials.push(newCredential);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials));
+  await apiRequest("POST", "/api/credentials", credential);
 }
 
 export async function updateCredential(id: string, credential: InsertCredential): Promise<void> {
-  const credentials = getCredentials();
-  const index = credentials.findIndex((c) => c.id === id);
-  
-  if (index === -1) {
-    throw new Error("Credential not found");
-  }
-
-  credentials[index] = {
-    ...credentials[index],
-    ...credential,
-  };
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(credentials));
+  await apiRequest("PUT", `/api/credentials/${id}`, credential);
 }
 
 export async function deleteCredential(id: string): Promise<void> {
-  const credentials = getCredentials();
-  const filtered = credentials.filter((c) => c.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+  await apiRequest("DELETE", `/api/credentials/${id}`);
 }

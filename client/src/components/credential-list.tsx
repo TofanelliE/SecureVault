@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { type Credential } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,8 +13,28 @@ interface CredentialListProps {
 }
 
 export default function CredentialList({ search, onEdit }: CredentialListProps) {
-  const [credentials, setCredentials] = useState<Credential[]>(() => getCredentials());
+  const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    async function loadCredentials() {
+      try {
+        const data = await getCredentials();
+        setCredentials(data);
+      } catch (error) {
+        toast({
+          title: "Error loading credentials",
+          description: error instanceof Error ? error.message : "Please try again",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadCredentials();
+  }, [toast]);
 
   const filteredCredentials = credentials.filter(
     (cred) =>
@@ -25,7 +45,7 @@ export default function CredentialList({ search, onEdit }: CredentialListProps) 
   async function handleDelete(id: string) {
     try {
       await deleteCredential(id);
-      setCredentials(getCredentials());
+      setCredentials(await getCredentials());
       toast({ title: "Credential deleted successfully" });
     } catch (error) {
       toast({
@@ -60,6 +80,10 @@ export default function CredentialList({ search, onEdit }: CredentialListProps) 
     document.body.removeChild(form);
   }
 
+  if (isLoading) {
+    return <div className="text-center">Loading credentials...</div>;
+  }
+
   return (
     <div className="space-y-4">
       {filteredCredentials.map((credential) => (
@@ -78,7 +102,7 @@ export default function CredentialList({ search, onEdit }: CredentialListProps) 
               >
                 <ExternalLink className="h-4 w-4" />
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="icon"
