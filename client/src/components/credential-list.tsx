@@ -2,10 +2,11 @@ import { type Credential } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Edit2, ExternalLink, Trash2 } from "lucide-react";
+import { Edit2, ExternalLink, Trash2, Eye, EyeOff } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteCredential } from "@/lib/storage";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 interface CredentialListProps {
   search: string;
@@ -15,6 +16,7 @@ interface CredentialListProps {
 export default function CredentialList({ search, onEdit }: CredentialListProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
 
   const { data: credentials = [], isLoading } = useQuery({
     queryKey: ['/api/credentials'],
@@ -41,8 +43,19 @@ export default function CredentialList({ search, onEdit }: CredentialListProps) 
     }
   }
 
+  function togglePasswordVisibility(id: string) {
+    setVisiblePasswords(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }
+
   function handleAutoConnect(credential: Credential) {
-    // Create a temporary form and submit it
     const form = document.createElement("form");
     form.method = "POST";
     form.action = credential.url;
@@ -77,6 +90,20 @@ export default function CredentialList({ search, onEdit }: CredentialListProps) 
             <div className="flex-1">
               <h3 className="font-medium">{new URL(credential.url).hostname}</h3>
               <p className="text-sm text-muted-foreground">{credential.username}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Password: {visiblePasswords.has(credential.id) ? credential.password : '••••••••'}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-4 w-4 ml-2"
+                  onClick={() => togglePasswordVisibility(credential.id)}
+                >
+                  {visiblePasswords.has(credential.id) ? 
+                    <EyeOff className="h-3 w-3" /> : 
+                    <Eye className="h-3 w-3" />
+                  }
+                </Button>
+              </p>
             </div>
 
             <div className="flex gap-2">
